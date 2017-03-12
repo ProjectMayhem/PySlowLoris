@@ -8,6 +8,7 @@ class LorisConnection:
         
         self.socket = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect ((self.ip, self.port))
+        # TODO: Add SSL support
 
     def close (self):
         self.socket.close ()    
