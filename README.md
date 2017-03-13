@@ -1,20 +1,20 @@
 # PySlowLoris
 
-Python Implementation of a Slow Loris DoS Tool
+Python Implementation of a SlowLoris DoS Tool
 
 ## The Slow Loris Attack
 
-The Slow Loris attack takes advantage of the way some versions of Apache and other smaller
-webservers were written. These servers have a connection pool with a maximum amount connections
-that can be held at one time. In addition, many of these servers have either very long or nonexistent
-timeouts for web requests. Slow Loris fills up this connection pool with fake requests and appends
+The [SlowLoris attack][wikipedia_slowloris] takes advantage of the way some versions of Apache and other smaller
+webservers were written. These servers have a connection pool with a maximum amount of connections
+that can be held simultaneously. In addition, many of these servers have either very long or nonexistent
+timeouts for web requests. SlowLoris fills up this connection pool with fake requests and appends
 useless data to these requests, while never terminating them. This prevents the server from accepting
-any new legitement requests from users.
+any new legitimate requests from actual users.
 
 The advantages of this style of attack are that it requires virtually no computing effort
 to be effective. These servers can only handle 100-200 connections at one time, and requests
 only need to be appended to about once every 10 seconds. This means that this attack can be
-routed through tor for anonymity as well as launched from a cell phone.
+routed through Tor for anonymity, as well as launched from a cell phone.
 
 The disadvantages of this attack are primarily that it only works on Apache 1x, 2x, dhpptd, and
 some other minor servers. Servers like nginx are not vulnerable to this form of attack.
@@ -80,3 +80,5 @@ $ python main.py [IP] [PORT]
 ```
 $ python main.py [IP] [PORT] [CONNECTION_COUNT]
 ```
+
+[wikipedia_slowloris]: https://en.wikipedia.org/wiki/Slowloris_(computer_security)
