@@ -10,7 +10,11 @@ class LorisConnection:
         self.host = host
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.host, self.port))
+        try:
+            self.socket.connect((self.host, self.port))
+        except TimeoutError:
+            print("TANGO DOWN! (Host={}, Port={}, Status='offline')".format(self.host, self.port))
+            raise
         # TODO: Add SSL support
 
     def close(self):

