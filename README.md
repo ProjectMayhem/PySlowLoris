@@ -19,66 +19,39 @@ routed through Tor for anonymity, as well as launched from a cell phone.
 The disadvantages of this attack are primarily that it only works on Apache 1x, 2x, dhpptd, and
 some other minor servers. Servers like nginx are not vulnerable to this form of attack.
 
-## Installation and Use
+## Usage
 
-### Installation
+| Mode                       | Syntax                                    |
+|----------------------------|-------------------------------------------|
+| Single target              | `main.py <HOST> [PORT] [NUM_CONNECTIONS]` |
+| Multiple targets           | `main.py <FILE>`                          |
+| File format (one per line) | `<HOST> [PORT] [NUM_CONNECTIONS]`         |
 
-#### Step 1 - Clone Repo
+### Running
 
-From a terminal or Git Bash, type the following:
+For Linux/macOS/WSL users:
 
-```
-$ git clone https://github.com/ProjectMayhem/PySlowLoris
-```
+1. `$ git clone https://github.com/ProjectMayhem/PySlowLoris.git`
+2. `$ cd PySlowLoris`
+3. `$ python src/main.py <HOST> [PORT] [NUM_CONNECTIONS]`
 
-#### Step 2 - Install Python
+For Windows users:
 
-For Windows users it is recommended that you install Canopy (https://store.enthought.com/downloads/) and then
-use the "Canopy Command Prompt" from here on out.
+1. Open an instance of the command-line processor (`cmd.exe`)
+2. `> git clone https://github.com/ProjectMayhem/PySlowLoris.git`
+3. `> cd PySlowLoris`
+4. `> python src\main.py <HOST> [PORT] [NUM_CONNECTIONS]`
 
-For Linux users Python usually comes pre-installed with most operating systems. Check to see if Python is installed
-by running the following:
+### Extra
 
-```
-$ python --version
-```
+Installing Git and Python on Windows:
 
-If not, then run one of these following commands (depending on your system):
+1. Download and install [Git for Windows][git_scm]
+2. Download and install [Python 2][py2_win] or [Python 3][py3_win]<br>
+3. Restart or log out and in again to apply `PATH` changes
 
-Debian:
-
-```
-$ sudo apt-get install python
-```
-
-RedHat/Fedora/CentOS:
-
-```
-$ sudo yum install python
-```
-
-#### Step 3 - Change Directories
-
-Either in terminal or in the Canopy Command Prompt, enter the following:
-
-```
-$ cd PySlowLoris/src
-```
-
-#### Step 4 - Run
-
-Now we can invoke the ```main.py``` Python script, with any of the following syntax:
-
-```
-$ python main.py [IP]
-```
-
-```
-$ python main.py [IP] [PORT]
-```
-
-```
-$ python main.py [IP] [PORT] [CONNECTION_COUNT]
-```
 
 [wikipedia_slowloris]: https://en.wikipedia.org/wiki/Slowloris_(computer_security)
+[py2_win]: https://www.python.org/downloads/release/python-2713/
+[py3_win]: https://www.python.org/downloads/release/python-360/
+[git_scm]: https://git-for-windows.github.io/
