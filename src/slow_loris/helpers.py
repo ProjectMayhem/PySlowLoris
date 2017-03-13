@@ -1,13 +1,13 @@
 """This module contains helper functions."""
 
-def try_detect_webserver(host, port):
+def try_detect_webserver(target):
     """Tries to detect the host's webserver."""
     import socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(3)
     #sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        sock.connect((host, port))
+        sock.connect((target.host, target.port))
         sock.send("GET / HTTP/1.1\r\n\r\n".encode("ascii"))
         response = sock.recv(1024).decode("utf-8")
         sock.shutdown(1)
