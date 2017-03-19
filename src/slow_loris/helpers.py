@@ -12,8 +12,7 @@ def try_detect_webserver(target):
         response = sock.recv(1024).decode("utf-8")
         sock.shutdown(1)
         sock.close()
-    # pylint: disable=W0702
-    except:
+    except: # pylint: disable=bare-except
         return None
     for line in response.split("\r\n"):
         if line.startswith("Server:"):

@@ -3,7 +3,11 @@
 class TargetInfo:
     """SlowLoris target."""
 
-    def __init__(self, host, port, count):
+    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-few-public-methods
+
+    def __init__(self, host, port, ssl, count=200):
+        self.ssl = ssl
         self.host = host
         self.port = port
         self.count = count

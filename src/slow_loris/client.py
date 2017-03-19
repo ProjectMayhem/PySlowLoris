@@ -6,7 +6,7 @@ import time
 from .connection import LorisConnection
 from .user_agent import get_random_user_agent
 
-class SlowLoris:
+class LorisClient:
     """SlowLoris attack client."""
 
     def __init__(self):
@@ -54,7 +54,7 @@ class SlowLoris:
                 target.connections[i].keep_alive()
             # If the server closed one of our connections,
             # re-open the connection in its place.
-            except: # pylint: disable=W0702
+            except: # pylint: disable=bare-except
                 # Notify the user that the host started dropping connections
                 # if this connection was the first one being dropped.
                 if target.dropped_connections == 0:

