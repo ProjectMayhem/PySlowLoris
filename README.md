@@ -23,9 +23,20 @@ some other minor servers. Servers like nginx are not vulnerable to this form of 
 
 | Mode                       | Syntax                                    |
 |----------------------------|-------------------------------------------|
-| Single target              | `main.py <HOST> [PORT] [NUM_CONNECTIONS]` |
-| Multiple targets           | `main.py <FILE>`                          |
-| File format (one per line) | `<HOST> [PORT] [NUM_CONNECTIONS]`         |
+| Single target              | `main.py HOST[:PORT] [--ssl]`             |
+| Multiple targets           | `main.py -f <FILE>`                       |
+| File format (one per line) | `HOST[:PORT]`                             |
+
+The default port is 80. Port 443 automatically enables SSL.   
+Force SSL by using the `--ssl` command-line switch.
+
+Examples:
+```bash
+$ main.py foo.bar           # Port 80,  SSL disabled
+$ main.py foo.bar:80        # Port 80,  SSL disabled
+$ main.py foo.bar:81 --ssl  # Port 81,  SSL enabled
+$ main.py foo.bar:443       # Port 443, SSL enabled
+```
 
 ### Running
 
@@ -33,14 +44,14 @@ For Linux/macOS/WSL users:
 
 1. `$ git clone https://github.com/ProjectMayhem/PySlowLoris.git`
 2. `$ cd PySlowLoris`
-3. `$ python src/main.py <HOST> [PORT] [NUM_CONNECTIONS]`
+3. `$ python src/main.py HOST[:PORT]`
 
 For Windows users:
 
 1. Open an instance of the command-line processor (`cmd.exe`)
 2. `> git clone https://github.com/ProjectMayhem/PySlowLoris.git`
 3. `> cd PySlowLoris`
-4. `> python src\main.py <HOST> [PORT] [NUM_CONNECTIONS]`
+4. `> python src\main.py HOST[:PORT]`
 
 ### Extra
 
